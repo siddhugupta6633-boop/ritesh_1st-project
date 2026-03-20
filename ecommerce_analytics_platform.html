@@ -1,0 +1,307 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: transparent; }
+  .dash { font-family: 'DM Mono', 'Courier New', monospace; padding: 1.5rem 0; color: #e2e8f0; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+  .header h1 { font-size: 15px; font-weight: 500; letter-spacing: 0.08em; color: #94a3b8; text-transform: uppercase; }
+  .header .live { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #22c55e; }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .filters { display: flex; gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .filter-btn { font-family: inherit; font-size: 11px; padding: 5px 14px; border-radius: 4px; border: 1px solid #334155; background: #0f172a; color: #64748b; cursor: pointer; letter-spacing: 0.05em; transition: all 0.15s; }
+  .filter-btn.active { background: #1e293b; border-color: #3b82f6; color: #60a5fa; }
+  .filter-btn:hover { border-color: #475569; color: #94a3b8; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .kpi { background: #0f172a; border: 1px solid #1e293b; border-radius: 6px; padding: 14px 16px; }
+  .kpi-label { font-size: 10px; color: #475569; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .kpi-value { font-size: 22px; font-weight: 500; color: #f1f5f9; margin-bottom: 3px; }
+  .kpi-delta { font-size: 11px; }
+  .kpi-delta.up { color: #22c55e; }
+  .kpi-delta.down { color: #ef4444; }
+  .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .charts-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 6px; padding: 16px; }
+  .card-title { font-size: 10px; color: #475569; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 14px; }
+  .chart-wrap { position: relative; width: 100%; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { color: #475569; font-weight: 500; text-align: left; padding: 6px 8px; border-bottom: 1px solid #1e293b; font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; }
+  td { color: #94a3b8; padding: 7px 8px; border-bottom: 1px solid #0f172a; }
+  tr:hover td { background: #1e293b22; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 10px; }
+  .badge-green { background: #14532d44; color: #4ade80; border: 1px solid #166534; }
+  .badge-red { background: #7f1d1d44; color: #f87171; border: 1px solid #991b1b; }
+  .badge-amber { background: #78350f44; color: #fbbf24; border: 1px solid #92400e; }
+  .funnel-bar { height: 28px; border-radius: 3px; display: flex; align-items: center; padding-left: 10px; font-size: 11px; font-weight: 500; margin-bottom: 6px; transition: width 0.6s ease; }
+  .legend-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; font-size: 11px; color: #64748b; }
+  .legend-row span { display: flex; align-items: center; gap: 5px; }
+  .legend-sq { width: 9px; height: 9px; border-radius: 2px; }
+</style>
+
+<div class="dash">
+  <div class="header">
+    <h1>E-Commerce Analytics</h1>
+    <div class="live"><div class="live-dot"></div>Live · Last updated 2m ago</div>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="setRange(this,'7d')">7 days</button>
+    <button class="filter-btn" onclick="setRange(this,'30d')">30 days</button>
+    <button class="filter-btn" onclick="setRange(this,'90d')">90 days</button>
+    <button class="filter-btn" onclick="setRange(this,'1y')">1 year</button>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value" id="kv1">$84,320</div>
+      <div class="kpi-delta up" id="kd1">▲ 12.4% vs prev</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Orders</div>
+      <div class="kpi-value" id="kv2">1,247</div>
+      <div class="kpi-delta up" id="kd2">▲ 8.1% vs prev</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Conversion Rate</div>
+      <div class="kpi-value" id="kv3">3.82%</div>
+      <div class="kpi-delta down" id="kd3">▼ 0.3% vs prev</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Avg Order Value</div>
+      <div class="kpi-value" id="kv4">$67.62</div>
+      <div class="kpi-delta up" id="kd4">▲ 4.2% vs prev</div>
+    </div>
+  </div>
+
+  <div class="charts-row">
+    <div class="card">
+      <div class="card-title">Revenue & Orders Over Time</div>
+      <div class="legend-row">
+        <span><span class="legend-sq" style="background:#3b82f6"></span>Revenue</span>
+        <span><span class="legend-sq" style="background:#22c55e"></span>Orders</span>
+      </div>
+      <div class="chart-wrap" style="height:200px"><canvas id="revenueChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Revenue by Category</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="catChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-row2">
+    <div class="card">
+      <div class="card-title">Conversion Funnel</div>
+      <div id="funnel"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Traffic Sources</div>
+      <div class="chart-wrap" style="height:170px"><canvas id="trafficChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:10px">
+    <div class="card-title">Top Products</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Product</th><th>Units Sold</th><th>Revenue</th><th>Return Rate</th><th>Trend</th></tr></thead>
+        <tbody id="productTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="charts-row2">
+    <div class="card">
+      <div class="card-title">Customer Segments</div>
+      <div class="chart-wrap" style="height:170px"><canvas id="segChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Daily Active Users (7d)</div>
+      <div class="chart-wrap" style="height:170px"><canvas id="dauChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const ranges = {
+  '7d': {
+    kpis: ['$84,320','1,247','3.82%','$67.62'],
+    deltas: [['up','▲ 12.4%'],['up','▲ 8.1%'],['down','▼ 0.3%'],['up','▲ 4.2%']],
+    labels: ['Mar 14','Mar 15','Mar 16','Mar 17','Mar 18','Mar 19','Mar 20'],
+    revenue: [10200,12400,9800,14100,11600,13200,12900],
+    orders: [148,183,142,209,171,196,198]
+  },
+  '30d': {
+    kpis: ['$312,800','4,820','3.61%','$64.90'],
+    deltas: [['up','▲ 9.2%'],['up','▲ 6.4%'],['down','▼ 0.8%'],['up','▲ 2.6%']],
+    labels: ['Feb 19','Feb 26','Mar 5','Mar 12','Mar 19'],
+    revenue: [58000,72000,65000,81000,76800],
+    orders: [890,1120,990,1250,1180]
+  },
+  '90d': {
+    kpis: ['$891,400','13,660','3.74%','$65.25'],
+    deltas: [['up','▲ 18.3%'],['up','▲ 14.7%'],['up','▲ 0.2%'],['up','▲ 3.1%']],
+    labels: ['Jan','Feb','Mar'],
+    revenue: [272000,308000,311400],
+    orders: [4120,4680,4860]
+  },
+  '1y': {
+    kpis: ['$3.24M','49,800','3.69%','$65.06'],
+    deltas: [['up','▲ 24.1%'],['up','▲ 19.8%'],['up','▲ 0.5%'],['up','▲ 3.6%']],
+    labels: ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'],
+    revenue: [230000,245000,268000,255000,280000,310000,295000,370000,320000,272000,308000,311400],
+    orders: [3500,3720,4100,3900,4280,4710,4490,5620,4870,4120,4680,4860]
+  }
+};
+
+const products = [
+  ['Wireless Earbuds Pro', 342, '$24,810', '2.1%', 'up'],
+  ['Smart Watch Series X', 218, '$19,402', '3.4%', 'up'],
+  ['Portable Charger 20K', 487, '$12,175', '1.2%', 'up'],
+  ['Laptop Stand Foldable', 194, '$8,730', '0.8%', 'down'],
+  ['Mechanical Keyboard TKL', 156, '$7,644', '1.9%', 'up'],
+  ['RGB Desk Light Bar', 291, '$6,111', '4.2%', 'down'],
+];
+
+const funnel = [
+  {label:'Sessions', val:32800, pct:100, color:'#3b82f6'},
+  {label:'Product Views', val:18420, pct:56, color:'#6366f1'},
+  {label:'Add to Cart', val:6240, pct:19, color:'#8b5cf6'},
+  {label:'Checkout', val:2810, pct:8.6, color:'#a855f7'},
+  {label:'Purchase', val:1247, pct:3.8, color:'#22c55e'},
+];
+
+let revenueChart, catChart, trafficChart, segChart, dauChart;
+
+function buildProductTable() {
+  const tb = document.getElementById('productTable');
+  tb.innerHTML = products.map(p => `
+    <tr>
+      <td style="color:#e2e8f0">${p[0]}</td>
+      <td>${p[1]}</td>
+      <td style="color:#f1f5f9">${p[2]}</td>
+      <td><span class="badge ${parseFloat(p[3])>3?'badge-red':'badge-green'}">${p[3]}</span></td>
+      <td style="color:${p[4]==='up'?'#22c55e':'#ef4444'}">${p[4]==='up'?'▲ +':'▼ -'}${Math.floor(Math.random()*15+2)}%</td>
+    </tr>`).join('');
+}
+
+function buildFunnel() {
+  const el = document.getElementById('funnel');
+  el.innerHTML = funnel.map(f => `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div style="width:90px;font-size:10px;color:#64748b;letter-spacing:0.05em;text-align:right">${f.label}</div>
+      <div style="flex:1">
+        <div class="funnel-bar" style="width:${f.pct}%;background:${f.color}22;border-left:3px solid ${f.color};color:${f.color}">
+          ${f.val.toLocaleString()}
+        </div>
+      </div>
+      <div style="font-size:10px;color:#475569;width:36px">${f.pct}%</div>
+    </div>`).join('');
+}
+
+function initCharts(range) {
+  const d = ranges[range];
+  const chartDefaults = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { x: { grid:{color:'#1e293b'}, ticks:{color:'#475569',font:{size:10}} }, y: { grid:{color:'#1e293b'}, ticks:{color:'#475569',font:{size:10}} } }
+  };
+
+  if (revenueChart) revenueChart.destroy();
+  revenueChart = new Chart(document.getElementById('revenueChart'), {
+    type: 'bar',
+    data: {
+      labels: d.labels,
+      datasets: [
+        { label:'Revenue', data: d.revenue, backgroundColor:'#3b82f633', borderColor:'#3b82f6', borderWidth:1.5, yAxisID:'y', order:2 },
+        { label:'Orders', data: d.orders, type:'line', borderColor:'#22c55e', backgroundColor:'#22c55e22', borderWidth:2, pointRadius:3, pointBackgroundColor:'#22c55e', fill:true, yAxisID:'y1', order:1, tension:0.3 }
+      ]
+    },
+    options: { ...chartDefaults, scales: {
+      x: { grid:{color:'#1e293b'}, ticks:{color:'#475569',font:{size:10}} },
+      y: { grid:{color:'#1e293b'}, ticks:{color:'#475569',font:{size:10}, callback: v=>'$'+Math.round(v/1000)+'k'}, position:'left' },
+      y1: { grid:{display:false}, ticks:{color:'#22c55e',font:{size:10}}, position:'right' }
+    }}
+  });
+
+  if (catChart) catChart.destroy();
+  catChart = new Chart(document.getElementById('catChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Electronics','Accessories','Home','Apparel','Sports'],
+      datasets: [{ data:[38,24,17,13,8], backgroundColor:['#3b82f6','#6366f1','#8b5cf6','#22c55e','#f59e0b'], borderWidth:0, hoverOffset:4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, position:'bottom', labels:{color:'#64748b',font:{size:10},boxWidth:10,padding:10} } },
+      cutout:'68%'
+    }
+  });
+
+  if (trafficChart) trafficChart.destroy();
+  trafficChart = new Chart(document.getElementById('trafficChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Organic','Paid','Email','Social','Direct','Referral'],
+      datasets: [{ data:[34,27,15,12,8,4], backgroundColor:['#3b82f6','#6366f1','#8b5cf6','#22c55e','#f59e0b','#ef4444'], borderRadius:3, borderWidth:0 }]
+    },
+    options: {
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins: { legend:{display:false} },
+      scales: {
+        x: { grid:{color:'#1e293b'}, ticks:{color:'#475569',font:{size:10},callback:v=>v+'%'} },
+        y: { grid:{display:false}, ticks:{color:'#94a3b8',font:{size:11}} }
+      }
+    }
+  });
+
+  if (segChart) segChart.destroy();
+  segChart = new Chart(document.getElementById('segChart'), {
+    type: 'bar',
+    data: {
+      labels: ['New','Returning','Loyal','At-Risk','Churned'],
+      datasets: [
+        { label:'Users', data:[4200,3100,2800,1400,820], backgroundColor:['#3b82f633','#6366f133','#22c55e33','#f59e0b33','#ef444433'], borderColor:['#3b82f6','#6366f1','#22c55e','#f59e0b','#ef4444'], borderWidth:1.5, borderRadius:3 }
+      ]
+    },
+    options: { ...chartDefaults, plugins:{legend:{display:false}} }
+  });
+
+  if (dauChart) dauChart.destroy();
+  dauChart = new Chart(document.getElementById('dauChart'), {
+    type: 'line',
+    data: {
+      labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+      datasets: [{ data:[4120,4680,4390,5100,4820,3940,3280], borderColor:'#3b82f6', backgroundColor:'#3b82f611', borderWidth:2, pointRadius:4, pointBackgroundColor:'#0f172a', pointBorderColor:'#3b82f6', pointBorderWidth:2, fill:true, tension:0.4 }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales: {
+        x:{grid:{color:'#1e293b'},ticks:{color:'#475569',font:{size:10}}},
+        y:{grid:{color:'#1e293b'},ticks:{color:'#475569',font:{size:10},callback:v=>Math.round(v/1000)+'k'}}
+      }
+    }
+  });
+}
+
+function setRange(btn, range) {
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const d = ranges[range];
+  const kpiIds = ['kv1','kv2','kv3','kv4','kd1','kd2','kd3','kd4'];
+  d.kpis.forEach((v,i) => { document.getElementById('kv'+(i+1)).textContent = v; });
+  d.deltas.forEach((v,i) => {
+    const el = document.getElementById('kd'+(i+1));
+    el.className = 'kpi-delta '+v[0];
+    el.textContent = v[1]+' vs prev';
+  });
+  initCharts(range);
+}
+
+buildProductTable();
+buildFunnel();
+initCharts('7d');
+</script>
